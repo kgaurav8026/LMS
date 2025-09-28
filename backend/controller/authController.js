@@ -27,7 +27,7 @@ export const signUp = async (req, res) => {
     const newUser = new User({ name, email, password: hashedPassword, role });
     await newUser.save(); // ✅ Persist user in DB
 
-    const token = await generateToken(newUser._id);
+    const token = generateToken(newUser._id);
 
     res.cookie("token", token, {
       // ✅ Use res.cookie
@@ -59,7 +59,7 @@ export const login = async (req, res) => {
     if (!isPasswordMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
-    let token = await generateToken(existUser._id);
+    let token = generateToken(existUser._id);
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -89,6 +89,6 @@ export const logout = (req, res) => {
     });
     return res.status(200).json({ message: "Logout successful" });
   } catch (error) {
-    res.status(500).json({ message: "Server Error" });
+    res.status(500).json({ message: "Logout Server Error" });
   }
 };

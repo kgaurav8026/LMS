@@ -7,10 +7,10 @@ import { useDispatch } from "react-redux";
 import { setUserData } from "../redux/userSlice";
 
 const Login = () => {
+  const dispatch = useDispatch();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -20,7 +20,6 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
 
     try {
@@ -29,7 +28,7 @@ const Login = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include", // Include cookies for token
+        credentials: "include",
         body: JSON.stringify({ email, password }),
       });
 
@@ -38,8 +37,9 @@ const Login = () => {
       if (!response.ok) {
         throw new Error(data.message || "Login failed");
       }
-      dispatch(setUserData(data));
-      // Show success toast
+
+      dispatch(setUserData(data.user));
+
       toast.success("Login successful!", {
         position: "top-right",
         autoClose: 3000,
@@ -50,12 +50,19 @@ const Login = () => {
         progress: undefined,
       });
 
-      // Redirect after a delay to allow toast visibility
       setTimeout(() => {
-        navigate("/"); // Navigate to home
+        navigate("/");
       }, 3000);
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message, {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
     } finally {
       setLoading(false);
     }
@@ -63,10 +70,7 @@ const Login = () => {
 
   return (
     <div className="bg-[#dddbdb] w-[100vw] h-[100vh] flex items-center justify-center p-4">
-      <div
-        class20
-        className="w-full max-w-[600px] min-h-[450px] bg-white shadow-xl rounded-2xl flex flex-col md:flex-row overflow-hidden"
-      >
+      <div className="w-full max-w-[600px] min-h-[450px] bg-white shadow-xl rounded-2xl flex flex-col md:flex-row overflow-hidden">
         <div className="flex-1 bg-white p-4 sm:p-6 md:p-8 flex flex-col justify-center space-y-4 sm:space-y-6">
           <h2 className="text-xl sm:text-2xl font-bold mb-2 text-center">
             Welcome Back
@@ -74,9 +78,6 @@ const Login = () => {
           <p className="text-gray-500 mb-4 sm:mb-6 text-center">
             Please sign in to your account
           </p>
-          {error && (
-            <div className="text-red-500 text-sm text-center">{error}</div>
-          )}
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             <div className="mb-3 sm:mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
