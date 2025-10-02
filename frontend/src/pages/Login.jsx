@@ -5,6 +5,8 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../redux/userSlice";
+import { auth, provider } from "../../utils/firebase";
+import { signInWithPopup } from "firebase/auth";
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -55,6 +57,62 @@ const Login = () => {
       }, 3000);
     } catch (err) {
       toast.error(err.message, {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      const response = await fetch(`${serverUrl}/api/auth/google-auth`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          name: user.displayName,
+          email: user.email,
+          role: "student", // Default role for login
+          googleId: user.uid, // Include googleId for backend validation
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Google authentication failed");
+      }
+
+      dispatch(setUserData(data.user));
+
+      toast.success(data.message || "Google authentication successful!", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
+
+      setTimeout(() => {
+        navigate("/");
+      }, 3000);
+    } catch (err) {
+      toast.error(err.message || "Google authentication failed", {
         position: "top-right",
         autoClose: 5000,
         hideProgressBar: false,
@@ -153,7 +211,9 @@ const Login = () => {
           <div className="text-center my-2 text-gray-500">OR</div>
           <button
             type="button"
-            className="w-full bg-red-600 text-white py-2 rounded-md hover:bg-red-700 transition flex items-center justify-center text-sm sm:text-base"
+            className="w-full bg-red-600 text-white py-2 rounded-md hover:bg-red-700 transition flex items-center justify-center text-sm sm:text-base disabled:bg-red-400"
+            onClick={handleGoogleSignIn}
+            disabled={loading}
           >
             <svg
               className="w-5 h-5 mr-2"
@@ -177,7 +237,7 @@ const Login = () => {
                 d="M24 48c6.48 0 11.93-2.15 15.89-5.81l-6.92-5.36c-1.91 1.28-4.36 2.04-7.97 2.04-6.17 0-11.39-4.17-13.26-9.76l-7.76 6.01C6.73 41.99 14.58 48 24 48z"
               />
             </svg>
-            Sign in with Google
+            {loading ? "Processing..." : "Sign in with Google"}
           </button>
           <div className="mt-4 text-center">
             <p className="text-sm text-gray-600">

@@ -167,3 +167,33 @@ export const resetPassword = async (req, res) => {
     res.status(500).json({ message: "Reset Password Server Error" });
   }
 };
+
+export const googleAuth = async (req, res) => {
+  try {
+    const { name, email, role } = req.body;
+    let existUser = await User.findOne({ email });
+    if (!existUser) {
+      const newUser = new User({ name, email, role });
+      await newUser.save();
+      existUser = newUser;
+    }
+    const token = generateToken(existUser._id);
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+    return res.status(200).json({
+      message: "Google authentication successful",
+      user: {
+        name: existUser.name,
+        email: existUser.email,
+        role: existUser.role,
+      },
+      token,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Google Auth Server Error" });
+  }
+};

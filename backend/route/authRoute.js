@@ -6,6 +6,7 @@ import {
   sendOtp,
   verifyOtp,
   resetPassword,
+  googleAuth,
 } from "../controller/authController.js";
 
 const authRouter = express.Router();
@@ -16,5 +17,6 @@ authRouter.get("/logout", logout);
 authRouter.post("/send-otp", sendOtp);
 authRouter.post("/verify-otp", verifyOtp);
 authRouter.post("/reset-password", resetPassword);
+authRouter.post("/google-auth", googleAuth);
 
 export default authRouter;
