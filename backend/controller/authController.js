@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import validator from "validator";
 import User from "../model/userModel.js";
 import { generateToken } from "../config/token.js";
+import sendOtpEmail from "../config/userMail.js";
 
 export const signUp = async (req, res) => {
   try {
@@ -90,5 +91,79 @@ export const logout = (req, res) => {
     return res.status(200).json({ message: "Logout successful" });
   } catch (error) {
     res.status(500).json({ message: "Logout Server Error" });
+  }
+};
+
+export const sendOtp = async (req, res) => {
+  // Implementation for sending OTP
+  try {
+    const { email } = req.body;
+    const existUser = await User.findOne({ email });
+    if (!existUser) {
+      return res.status(400).json({ message: "User does not exist" });
+    }
+    // Generate OTP and send email logic here
+    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // Generate a 6-digit OTP
+    existUser.resetOtp = otp;
+    existUser.otpExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
+    existUser.isOtpVerified = false;
+    await existUser.save();
+
+    // Send OTP email
+    await sendOtpEmail(email, otp);
+    return res.status(200).json({ message: "OTP sent successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Send OTP Server Error" });
+  }
+};
+
+export const verifyOtp = async (req, res) => {
+  // Implementation for verifying OTP
+  try {
+    const { email, otp } = req.body;
+    const existUser = await User.findOne({ email });
+    if (!existUser) {
+      return res.status(400).json({ message: "User does not exist" });
+    }
+    if (
+      existUser.resetOtp !== otp ||
+      !existUser.otpExpiry ||
+      existUser.otpExpiry < Date.now()
+    ) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+    existUser.isOtpVerified = true;
+    existUser.resetOtp = "";
+    existUser.otpExpiry = null;
+    await existUser.save();
+    return res.status(200).json({ message: "OTP verified successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Verify OTP Server Error" });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  // Implementation for resetting password
+  try {
+    const { email, newPassword } = req.body;
+    const existUser = await User.findOne({ email });
+    if (!existUser) {
+      return res.status(400).json({ message: "User does not exist" });
+    }
+    if (!existUser.isOtpVerified) {
+      return res.status(400).json({ message: "OTP not verified" });
+    }
+    if (newPassword.length < 8) {
+      return res
+        .status(400)
+        .json({ message: "Password must be at least 8 characters" });
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    existUser.password = hashedPassword;
+    existUser.isOtpVerified = false; // Reset OTP verification status
+    await existUser.save();
+    return res.status(200).json({ message: "Password reset successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Reset Password Server Error" });
   }
 };
