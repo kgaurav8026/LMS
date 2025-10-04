@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import ForgotPassword from "./pages/ForgotPassword";
 import getCurrentUser from "./customHooks/getCurrentUser";
+import UserProfile from "./components/userProfile";
 
 export const serverUrl = "http://localhost:8000";
 getCurrentUser;
@@ -16,6 +17,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/user/profile" element={<UserProfile />} />
       </Routes>
     </>
   );
